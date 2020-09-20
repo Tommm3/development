@@ -1,0 +1,2 @@
+Action FILE_delete executed on C:\Users\ssark\OneDrive\Dokumenty\Python_scripts\file_delete.txt on 2020-09-01 10:55:49Action FILE_delete executed on C:\Users\ssark\OneDrive\Dokumenty\Python_scripts\file_delete.txt on 2020-09-01 10:55:49Action FILE_delete executed on C:\Users\ssark\OneDrive\Dokumenty\Python_scripts\file_delete.txt on 2020-09-01 10:56:29
+Action FILE_delete executed on C:\Users\ssark\OneDrive\Dokumenty\Python_scripts\file_delete.txt on 2020-09-01 10:56:29

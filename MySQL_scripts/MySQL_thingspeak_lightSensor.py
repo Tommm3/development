@@ -16,14 +16,17 @@ mycursor = mydb.cursor()
 
 sqlFormula = "INSERT INTO light (time,value) VALUE (%s, %s)"
 
+tz = pytz.timezone('America/Godthab')
 
 def send_temperature():
-    response = requests.get("https://api.thingspeak.com/channels/557741/feeds.json?results=1?timezone=Europe%2FWarsaw")
+    response = requests.get("https://api.thingspeak.com/channels/557741/feeds.json?results=1")
     date_object = datetime.strptime(response.json()['feeds'][0]['created_at'], '%Y-%m-%dT%H:%M:%SZ')
-    data = (date_object.strftime('%d-%m-%Y %H:%M:%S'), response.json()['feeds'][0]['field4'])
+    local_tz = tz.localize(date_object)
+    utc_tz = local_tz.astimezone(pytz.UTC)
+    data = (local_tz.strftime('%d-%m-%Y %H:%M:%S'), response.json()['feeds'][0]['field4'])
     mycursor.execute(sqlFormula, data)
     mydb.commit()
-    print(date_object.strftime('%d-%m-%Y %H:%M:%S'), response.json()['feeds'][0]['field4'])
+    print(local_tz.strftime('%d-%m-%Y %H:%M:%S'), response.json()['feeds'][0]['field4'])
     # info = response.json()
     # print(info['feeds'][1]['field4'])
     threading.Timer(20, send_temperature).start()

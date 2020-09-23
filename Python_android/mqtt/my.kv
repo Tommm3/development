@@ -1,0 +1,28 @@
+<Button>:
+    font_size: self.height/2
+
+<MyGrid>
+    output: output
+    result: result
+
+    GridLayout:
+        cols: 1
+        size: root.width, root.height
+
+
+        TextInput:
+            id: result
+            multiline:True
+            size_hint: 0.2, 0.2
+
+        TextInput:
+            id: output
+            multiline:True
+            size_hint: 0.2, 0.2
+
+        GridLayout:
+            cols:3
+
+            Button:
+                text: ""
+                on_press: root.btnBracket()

@@ -1,0 +1,34 @@
+<Button>:
+    font_size: self.height/2
+
+<MySilka>
+    weekday : weekday
+    exercises : exercises
+
+    GridLayout:
+        cols: 1
+        size: root.width, root.height
+
+        Label:
+            id : weekday
+            font_size : 50
+            center_x : root.width / 2
+            top: root.top - 10
+            text:str(weekday)
+            size_hint: 0.15, 0.15
+
+        GridLayout:
+            cols:3
+
+            Label:
+                id : exercises
+                text:str(exercises)
+                halign: 'left'
+
+            Label:
+                text:str("Ostatnio")
+                size_hint: 0.15, 0.15
+
+            Label:
+                text:str("Dzis")
+                size_hint: 0.15, 0.15

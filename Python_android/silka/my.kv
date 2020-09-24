@@ -2,6 +2,7 @@
     weekday : weekday
     exercises : exercises
     last_weight : last_weight
+    new_weight1 :
 
     GridLayout:
         cols: 1
@@ -30,6 +31,31 @@
                 text:str(root.last_weight)
                 size_hint: 0.15, 0.15
 
-            Label:
-                text:str("Dzis")
-                size_hint: 0.15, 0.15
+            GridLayout:
+                TextInput:
+                    id: new_weight1
+                    multiline:False
+                TextInput:
+                    id: new_weight2
+                    multiline:False
+                TextInput:
+                    id: new_weight3
+                    multiline:False
+                TextInput:
+                    id: new_weight4
+                    multiline:False
+                TextInput:
+                    id: new_weight5
+                    multiline:False
+                TextInput:
+                    id: new_weight6
+                    multiline:False
+                TextInput:
+                    id: new_weight7
+                    multiline:False
+                TextInput:
+                    id: new_weight8
+                    multiline:False
+                TextInput:
+                    id: new_weight9
+                    multiline:False

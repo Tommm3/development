@@ -39,6 +39,7 @@ class MySilka(Widget):
     weekday = ObjectProperty(None)
     exercises = ObjectProperty(None)
     last_weight = ObjectProperty(None)
+    # new_weight[] = ObjectProperty(None)
     def get_weekday(self):
         self.weekday.text = datetime.now().strftime("%A")
     def get_exercises(self):

@@ -1,4 +1,4 @@
-from datetime import datetime
 
-weekday = datetime.now().strftime("%A")
-print(weekday)
+
+masa = {('masa'+str(1)): [1,2,3,4,5,6,75]}
+print(masa)

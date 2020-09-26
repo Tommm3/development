@@ -17,34 +17,36 @@ from openpyxl import load_workbook
 def read_day(wd):
     if wd=='Monday':
         df = pd.read_excel('silka.xlsx', skiprows=1, usecols=[0], nrows=7)
-    if wd=='Tuesday':
+    elif wd=='Tuesday':
         df = pd.read_excel('silka.xlsx', skiprows=9, usecols=[0], nrows=8)
-    if wd=='Thursday':
+    elif wd=='Thursday':
         df = pd.read_excel('silka.xlsx', skiprows=18, usecols=[0], nrows=7)
-    if wd=='Friday':
+    elif wd=='Friday':
         df = pd.read_excel('silka.xlsx', skiprows=26, usecols=[0], nrows=4)
+    else:
+        return 'Brak świczeń na dziś'
+        exit()
     return df.to_string(index=False).replace('\n','\n\n')
 
 def read_day_weight(wd):
     reader = pd.read_excel(r'silka.xlsx')
     if wd=='Monday':
         df = pd.read_excel('silka.xlsx', skiprows=1, usecols=[len(reader.columns)-1], nrows=7)
-    if wd=='Tuesday':
+    elif wd=='Tuesday':
         df = pd.read_excel('silka.xlsx', skiprows=9, usecols=[len(reader.columns)-2], nrows=8)
-    if wd=='Thursday':
+    elif wd=='Thursday':
         df = pd.read_excel('silka.xlsx', skiprows=18, usecols=[len(reader.columns)-2], nrows=7)
-    if wd=='Friday':
+    elif wd=='Friday':
         df = pd.read_excel('silka.xlsx', skiprows=26, usecols=[len(reader.columns)-2], nrows=4)
-    print(len(reader.columns)-1)
+    else:
+        return ''
+        exit()
     return df.to_string(index=False).replace('\n','\n\n')
 
 class MySilka(BoxLayout):
     weekday = ObjectProperty(None)
     exercises = ObjectProperty(None)
     last_weight = ObjectProperty(None)
-    # list = []
-
-    # new_weight[] = ObjectProperty(None)
 
     def __init__(self, **kwargs):
         # weekday_in = datetime.now().strftime('%A')
@@ -97,8 +99,12 @@ class MySilka(BoxLayout):
         masa = [new_weight1.text,new_weight2.text,new_weight3.text,new_weight4.text,new_weight5.text]
         if self.weekday.text == 'Monday' or self.weekday.text == 'Thursday':
             masa.extend([new_weight6.text,new_weight7.text,new_weight8.text])
-        if self.weekday.text == 'Tuesday':
+        elif self.weekday.text == 'Tuesday':
             masa.extend([new_weight6.text,new_weight7.text,new_weight8.text,new_weight9.text])
+        elif self.weekday.text == 'Friday':
+            pass
+        else:
+            exit()
         writer = pd.ExcelWriter('silka.xlsx', engine='openpyxl')
         writer.book = load_workbook('silka.xlsx')
         writer.sheets = dict((ws.title, ws) for ws in writer.book.worksheets)
@@ -120,8 +126,6 @@ class MySilka(BoxLayout):
 class MyApp(App):
     def build(self):
         apka = MySilka()
-        # self.height = TextInput(text='enter', size_hint=(200,200))
-        # apka.add_widget(self.height)
         apka.get_weekday()
         apka.get_exercises()
         return apka

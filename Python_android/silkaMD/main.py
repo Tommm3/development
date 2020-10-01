@@ -4,7 +4,13 @@ from kivymd.app import MDApp
 # from kivy.uix.gridlayout import GridLayout
 # from kivy.uix.boxlayout import BoxLayout
 # from kivy.uix.textinput import TextInput
-# from kivy.uix.label import Label
+from kivymd.uix.label import MDLabel, MDIcon
+from kivymd.uix.screen import Screen
+from kivymd.uix.button import MDFlatButton, MDRectangleFlatButton, MDIconButton, MDFloatingActionButton, MDRectangleFlatIconButton
+from kivymd.uix.textfield import MDTextField
+from kivy.lang import Builder
+from kivymd.uix.list import OneLineListItem
+from helpers import username_helper, button_helper, list_helper
 # from kivy.uix.button import Button
 # from kivy.uix.widget import Widget
 # from kivy.properties import ObjectProperty
@@ -122,11 +128,33 @@ from kivymd.app import MDApp
 #         print(masa)
 
 
+
+
 class MyApp(MDApp):
     def build(self):
+        self.theme_cls.primary_palette = "Yellow"
+        self.theme_cls.primary_hue = "A700"
+        self.theme_cls.theme_style = "Dark"
+
+        # screen = Screen()
+        # apka = MDLabel(text='Hello World', halign='center', theme_text_color='Custom', text_color=(64/255,0,128/255,1), font_style="Button")
+        # icon_label = MDIcon(icon='language-python',halign='center')
+        # btn_flat = MDRectangleFlatButton(text='hello', pos_hint={'center_x':0.5,'center_y':0.5})
+        # icon_btn= MDRectangleFlatIconButton(icon='android', pos_hint={'center_x':0.5,'center_y':0.5})
+        # username = Builder.load_string(username_helper)
+        screen = Builder.load_string(list_helper)
+        # screen.add_widget(username)
+        # screen.add_widget(button)
         # apka = MySilka()
         # apka.get_weekday()
         # apka.get_exercises()
-        return
+        return screen
+
+    def on_start(self):
+        for i in range(20):
+            items = OneLineListItem(text='Item '+str(i))
+            self.root.ids.container.add_widget(items)
+
+
 if __name__ == "__main__":
     MyApp().run()

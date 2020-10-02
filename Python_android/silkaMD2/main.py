@@ -8,45 +8,38 @@ from kivymd.uix.textfield import MDTextField
 from kivymd.uix.list import OneLineListItem, OneLineAvatarIconListItem
 from kivymd.uix.datatables import MDDataTable
 from kivymd.uix.screen import Screen
+from kivymd.uix.dialog import MDDialog
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.widget import Widget
 from kivy.lang import Builder
-from helpers import username_helper, button_helper, list_helper
+from kivy.metrics import dp
+from helpers import username_helper, button_helper, list_helper, text_field_helper
 from datetime import datetime
 import pandas as pd
 from openpyxl import load_workbook
+#
+# KV = '''
+# <Content>
+#     text: "Enter"
+#
+# '''
 
-# class ReadDayWeight():
-def get_weekday(self):
-    self.weekday.text = datetime.now().strftime('%A')
 
-
-def read_day_weight(wd):
-    if wd=='Monday':
-        df = pd.read_excel('silka.xlsx', skiprows=1, usecols=[0], nrows=7)
-    elif wd=='Tuesday':
-        df = pd.read_excel('silka.xlsx', skiprows=9, usecols=[0], nrows=8)
-    elif wd=='Thursday':
-        df = pd.read_excel('silka.xlsx', skiprows=18, usecols=[0], nrows=7)
-    elif wd=='Friday':
-        df = pd.read_excel('silka.xlsx', skiprows=26, usecols=[0], nrows=4)
-    else:
-        return 'Brak świczeń na dziś'
-        exit()
-    return df.to_string(index=False).replace('\n','\n\n')
-
-def read_day_weight(wd):
+def get_init_exercise_tuple():
+    wd = datetime.now().strftime("%A")
     reader = pd.read_excel(r'silka.xlsx')
     if wd=='Monday':
-        df = pd.read_excel('silka.xlsx', skiprows=1, usecols=[len(reader.columns)-1], nrows=7)
+        df = pd.read_excel('silka.xlsx', skiprows=0, usecols=[0,1,len(reader.columns)-1], nrows=8)
     elif wd=='Tuesday':
-        df = pd.read_excel('silka.xlsx', skiprows=9, usecols=[len(reader.columns)-2], nrows=8)
+        df = pd.read_excel('silka.xlsx', skiprows=8, usecols=[0,1,len(reader.columns)-2], nrows=9)
     elif wd=='Thursday':
-        df = pd.read_excel('silka.xlsx', skiprows=18, usecols=[len(reader.columns)-2], nrows=7)
+        df = pd.read_excel('silka.xlsx', skiprows=17, usecols=[0,1,len(reader.columns)-2], nrows=8)
     elif wd=='Friday':
-        df = pd.read_excel('silka.xlsx', skiprows=26, usecols=[len(reader.columns)-2], nrows=4)
+        df = pd.read_excel('silka.xlsx', skiprows=25, usecols=[0,1,len(reader.columns)-2,len(reader.columns)-1], nrows=5)
     else:
-        return ''
-        exit()
-    return df.to_string(index=False).replace('\n','\n\n')
+        df = 'Brak świczeń na dziś'
+    print(df.to_records(index=False))
+    return df.to_records(index=False)
 
 # class MySilka(BoxLayout):
 #     weekday = ObjectProperty(None)
@@ -126,6 +119,8 @@ def read_day_weight(wd):
 #         writer.close()
 #         print(masa)
 
+class Content(Widget):
+    pass
 
 
 class MyApp(MDApp):
@@ -133,15 +128,47 @@ class MyApp(MDApp):
         self.theme_cls.primary_palette = "Yellow"
         self.theme_cls.primary_hue = "A700"
         self.theme_cls.theme_style = "Dark"
-
-        table
-        screen = add_widget(table)
+        screen = Screen()
+        table = MDDataTable(pos_hint={"center_x":0.5,"center_y":0.5},
+                            size_hint=(0.9,0.6),
+                            check="True",
+                            rows_num=9,
+                            column_data=[
+                                ("Exercise",dp(80)),
+                                ("Repeats",dp(20)),
+                                ("Last weight",dp(20)),
+                                ("New weight",dp(20))
+                            ],
+                            row_data=get_init_exercise_tuple()
+                            )
+        table.bind(on_row_press=self.row_press)
+        head = MDLabel(text = datetime.now().strftime('%A'),
+                        halign = 'center',
+                        font_style = 'H3',
+                        pos_hint={"center_x":0.5,"center_y":0.9},
+                        theme_text_color="Custom",
+                        text_color=self.theme_cls.primary_color
+                        )
+        screen.add_widget(head)
+        screen.add_widget(table)
         return screen
 
-    def on_start(self):
-        for i in range(20):
-            textFields = OneLineAvatarIconListItem(text='Item '+str(i))
-            self.root.ids.container.add_widget(textFields)
+    def row_press(self, instance_table, current_row):
+        self.weight = Builder.load_string(text_field_helper)
+        self.dialog = MDDialog(text=current_row.text + "\n\n",
+                        size_hint=(0.8,1),
+                        buttons=[MDRectangleFlatButton(text="OK",
+                                                    on_release=self.close_dialog,
+                                                    text_color=self.theme_cls.primary_color,
+                                                    pos_hint={"center_x":1,"center_y":0.5})]
+                                )
+
+        self.dialog.add_widget(self.weight)
+        self.dialog.open()
+
+    def close_dialog(self, obj):
+        print(self.weight.text)
+        self.dialog.dismiss()
 
 
 if __name__ == "__main__":

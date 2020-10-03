@@ -16,7 +16,7 @@ from datetime import datetime
 import pandas as pd
 from openpyxl import load_workbook
 
-weekday = 4
+weekday = datetime.now().weekday()
 
 def get_init_exercise_tuple(wd):
     reader = pd.read_excel(r'silka.xlsx')
@@ -29,7 +29,7 @@ def get_init_exercise_tuple(wd):
     elif wd==4:
         df = pd.read_excel('silka.xlsx', skiprows=25, usecols=[0,1,len(reader.columns)-2], nrows=5)
     else:
-        return
+        return ""
         exit()
     df['new'] = pd.Series(["NEI"]*len(df), index=df.index)
     df.index+=1
@@ -44,44 +44,10 @@ class MyApp(MDApp):
         self.screen = Screen()
 
         if weekday in (0,1,3,4):
-            self.table = MDDataTable(pos_hint={"center_x":0.5,"center_y":0.5},
-                                size_hint=(0.9,0.6),
-                                rows_num=9,
-                                column_data=[
-                                    ("No.",dp(8)),
-                                    ("Exercise",dp(80)),
-                                    ("Repeats",dp(20)),
-                                    ("Last weight",dp(20)),
-                                    ("New weight",dp(20))
-                                ],
-                                row_data=self.current_table,
-                                )
-            self.table.bind(on_row_press=self.row_press)
-            self.confirm = MDRectangleFlatButton(text="CONFIRM",
-                                        on_release=self.confirm_action,
-                                        text_color=self.theme_cls.primary_color,
-                                        pos_hint={"center_x":0.8,"center_y":0.1}
-                                        )
-            self.screen.add_widget(self.table)
-            self.screen.add_widget(self.confirm)
+            self.update_screen()
         else:
-            info = MDLabel(text = "No exercises for today",
-                            halign = 'center',
-                            font_style = 'H4',
-                            pos_hint={"center_x":0.5,"center_y":0.5},
-                            theme_text_color="Custom",
-                            text_color=self.theme_cls.primary_color
-                            )
-            self.screen.add_widget(info)
+            self.no_exercises_screen()
 
-        head = MDLabel(text = datetime.now().strftime('%A'),
-                        halign = 'center',
-                        font_style = 'H3',
-                        pos_hint={"center_x":0.5,"center_y":0.9},
-                        theme_text_color="Custom",
-                        text_color=self.theme_cls.primary_color
-                        )
-        self.screen.add_widget(head)
         return self.screen
 
     def row_press(self, instance_table, instance_row):
@@ -102,26 +68,7 @@ class MyApp(MDApp):
             list_current_table_row = list(self.current_table[self.row_no])
             list_current_table_row[4] = self.weight.text
             self.current_table[self.row_no] = tuple(list_current_table_row)
-            self.table = MDDataTable(pos_hint={"center_x":0.5,"center_y":0.5},
-                                size_hint=(0.9,0.6),
-                                rows_num=9,
-                                column_data=[
-                                    ("No.",dp(8)),
-                                    ("Exercise",dp(80)),
-                                    ("Repeats",dp(20)),
-                                    ("Last weight",dp(20)),
-                                    ("New weight",dp(20))
-                                ],
-                                row_data=self.current_table
-                                )
-            self.confirm = MDRectangleFlatButton(text="CONFIRM",
-                                        on_release=self.confirm_action,
-                                        text_color=self.theme_cls.primary_color,
-                                        pos_hint={"center_x":0.8,"center_y":0.1}
-                                        )
-            self.table.bind(on_row_press=self.row_press)
-            self.screen.add_widget(self.table)
-            self.screen.add_widget(self.confirm)
+            self.update_screen()
         self.dialog.dismiss()
 
     def confirm_action(self,obj):
@@ -143,7 +90,57 @@ class MyApp(MDApp):
         elif weekday == 4:
             df.to_excel(writer,index=False,startcol=len(reader.columns)-1,startrow=26,header=False)
         writer.close()
-        
+
+    def update_screen(self):
+        self.screen.canvas.clear()
+        self.table = MDDataTable(pos_hint={"center_x":0.5,"center_y":0.5},
+                            size_hint=(0.9,0.6),
+                            rows_num=9,
+                            column_data=[
+                                ("No.",dp(8)),
+                                ("Exercise",dp(80)),
+                                ("Repeats",dp(20)),
+                                ("Last weight",dp(20)),
+                                ("New weight",dp(20))
+                            ],
+                            row_data=self.current_table,
+                            )
+        self.table.bind(on_row_press=self.row_press)
+        self.confirm = MDRectangleFlatButton(text="CONFIRM",
+                                    on_release=self.confirm_action,
+                                    text_color=self.theme_cls.primary_color,
+                                    pos_hint={"center_x":0.8,"center_y":0.1}
+                                    )
+        self.screen.add_widget(self.table)
+        self.screen.add_widget(self.confirm)
+        head = MDLabel(text = datetime.now().strftime('%A'),
+                        halign = 'center',
+                        font_style = 'H3',
+                        pos_hint={"center_x":0.5,"center_y":0.9},
+                        theme_text_color="Custom",
+                        text_color=self.theme_cls.primary_color
+                        )
+        self.screen.add_widget(head)
+
+    def no_exercises_screen(self):
+        self.screen.canvas.clear()
+        info = MDLabel(text = "No exercises for today",
+                        halign = 'center',
+                        font_style = 'H4',
+                        pos_hint={"center_x":0.5,"center_y":0.5},
+                        theme_text_color="Custom",
+                        text_color=self.theme_cls.primary_color
+                        )
+        head = MDLabel(text = datetime.now().strftime('%A'),
+                        halign = 'center',
+                        font_style = 'H3',
+                        pos_hint={"center_x":0.5,"center_y":0.9},
+                        theme_text_color="Custom",
+                        text_color=self.theme_cls.primary_color
+                        )
+        self.screen.add_widget(head)
+        self.screen.add_widget(info)
+
 
 if __name__ == "__main__":
     MyApp().run()

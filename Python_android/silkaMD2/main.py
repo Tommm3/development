@@ -3,67 +3,77 @@ from kivymd.app import MDApp
 
 from kivymd.uix.label import MDLabel, MDIcon
 from kivymd.uix.screen import Screen
-from kivymd.uix.button import MDFlatButton, MDRectangleFlatButton, MDIconButton, MDFloatingActionButton, MDRectangleFlatIconButton
+from kivymd.uix.button import MDFlatButton, MDRectangleFlatButton, MDIconButton,  MDRectangleFlatIconButton
 from kivymd.uix.textfield import MDTextField
-from kivymd.uix.list import OneLineListItem, OneLineAvatarIconListItem
 from kivymd.uix.datatables import MDDataTable
 from kivymd.uix.screen import Screen
 from kivymd.uix.dialog import MDDialog
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.widget import Widget
 from kivy.lang import Builder
 from kivy.metrics import dp
-from helpers import username_helper, button_helper, list_helper, text_field_helper
+from helpers import text_field_helper
 from datetime import datetime
 import pandas as pd
 from openpyxl import load_workbook
 
+weekday = 4
 
-def get_init_exercise_tuple():
-    wd = datetime.now().strftime("%A")
+def get_init_exercise_tuple(wd):
     reader = pd.read_excel(r'silka.xlsx')
-    if wd=='Monday':
-        df = pd.read_excel('silka.xlsx', skiprows=0, usecols=[0,1,len(reader.columns)-1,len(reader.columns)], nrows=8)
-        df.index+=1
-    elif wd=='Tuesday':
-        df = pd.read_excel('silka.xlsx', skiprows=8, usecols=[0,1,len(reader.columns)-2,len(reader.columns)-1], nrows=9)
-        df.index+=1
-    elif wd=='Thursday':
-        df = pd.read_excel('silka.xlsx', skiprows=17, usecols=[0,1,len(reader.columns)-2,len(reader.columns)-1], nrows=8)
-        df.index+=1
-    elif wd=='Friday':
-        df = pd.read_excel('silka.xlsx', skiprows=25, usecols=[0,1,len(reader.columns)-2,len(reader.columns)-1], nrows=5)
-        df.index+=1
+    if wd==0:
+        df = pd.read_excel('silka.xlsx', skiprows=0, usecols=[0,1,len(reader.columns)-1], nrows=8)
+    elif wd==1:
+        df = pd.read_excel('silka.xlsx', skiprows=8, usecols=[0,1,len(reader.columns)-2], nrows=9)
+    elif wd==3:
+        df = pd.read_excel('silka.xlsx', skiprows=17, usecols=[0,1,len(reader.columns)-2], nrows=8)
+    elif wd==4:
+        df = pd.read_excel('silka.xlsx', skiprows=25, usecols=[0,1,len(reader.columns)-2], nrows=5)
     else:
-        df = 'Brak świczeń na dziś'
-    print(df.to_records(index=True))
-    return df.to_records(index=True)
-
-
-class Content(Widget):
-    pass
-
+        return
+        exit()
+    df['new'] = pd.Series(["NEI"]*len(df), index=df.index)
+    df.index+=1
+    return df.to_records()
 
 class MyApp(MDApp):
     def build(self):
-        self.current_table = get_init_exercise_tuple()
+        self.current_table = get_init_exercise_tuple(weekday)
         self.theme_cls.primary_palette = "Yellow"
         self.theme_cls.primary_hue = "A700"
         self.theme_cls.theme_style = "Dark"
         self.screen = Screen()
-        self.table = MDDataTable(pos_hint={"center_x":0.5,"center_y":0.5},
-                            size_hint=(0.9,0.6),
-                            rows_num=9,
-                            column_data=[
-                                ("No.",dp(8)),
-                                ("Exercise",dp(80)),
-                                ("Repeats",dp(20)),
-                                ("Last weight",dp(20)),
-                                ("New weight",dp(20))
-                            ],
-                            row_data=self.current_table,
+
+        if weekday in (0,1,3,4):
+            self.table = MDDataTable(pos_hint={"center_x":0.5,"center_y":0.5},
+                                size_hint=(0.9,0.6),
+                                rows_num=9,
+                                column_data=[
+                                    ("No.",dp(8)),
+                                    ("Exercise",dp(80)),
+                                    ("Repeats",dp(20)),
+                                    ("Last weight",dp(20)),
+                                    ("New weight",dp(20))
+                                ],
+                                row_data=self.current_table,
+                                )
+            self.table.bind(on_row_press=self.row_press)
+            self.confirm = MDRectangleFlatButton(text="CONFIRM",
+                                        on_release=self.confirm_action,
+                                        text_color=self.theme_cls.primary_color,
+                                        pos_hint={"center_x":0.8,"center_y":0.1}
+                                        )
+            self.screen.add_widget(self.table)
+            self.screen.add_widget(self.confirm)
+        else:
+            info = MDLabel(text = "No exercises for today",
+                            halign = 'center',
+                            font_style = 'H4',
+                            pos_hint={"center_x":0.5,"center_y":0.5},
+                            theme_text_color="Custom",
+                            text_color=self.theme_cls.primary_color
                             )
-        self.table.bind(on_row_press=self.row_press)
+            self.screen.add_widget(info)
+
         head = MDLabel(text = datetime.now().strftime('%A'),
                         halign = 'center',
                         font_style = 'H3',
@@ -71,14 +81,7 @@ class MyApp(MDApp):
                         theme_text_color="Custom",
                         text_color=self.theme_cls.primary_color
                         )
-        self.confirm = MDRectangleFlatButton(text="CONFIRM",
-                                    on_release=self.confirm_action,
-                                    text_color=self.theme_cls.primary_color,
-                                    pos_hint={"center_x":0.8,"center_y":0.1}
-                                    )
         self.screen.add_widget(head)
-        self.screen.add_widget(self.table)
-        self.screen.add_widget(self.confirm)
         return self.screen
 
     def row_press(self, instance_table, instance_row):
@@ -111,12 +114,36 @@ class MyApp(MDApp):
                                 ],
                                 row_data=self.current_table
                                 )
+            self.confirm = MDRectangleFlatButton(text="CONFIRM",
+                                        on_release=self.confirm_action,
+                                        text_color=self.theme_cls.primary_color,
+                                        pos_hint={"center_x":0.8,"center_y":0.1}
+                                        )
             self.table.bind(on_row_press=self.row_press)
             self.screen.add_widget(self.table)
+            self.screen.add_widget(self.confirm)
         self.dialog.dismiss()
 
-    def confirm_action(self):
-        pass
+    def confirm_action(self,obj):
+        temp = []
+        for last in self.current_table:
+            temp.append(last[-1])
+        writer = pd.ExcelWriter('silka.xlsx', engine='openpyxl')
+        writer.book = load_workbook('silka.xlsx')
+        writer.sheets = dict((ws.title, ws) for ws in writer.book.worksheets)
+        reader = pd.read_excel(r'silka.xlsx')
+        masa_dict = {('masa'+str(len(reader.columns)-2)):temp}
+        df = pd.DataFrame(masa_dict)
+        if weekday == 0:
+            df.to_excel(writer,index=False,startcol=len(reader.columns))
+        elif weekday == 1:
+            df.to_excel(writer,index=False,startcol=len(reader.columns)-1,startrow=9,header=False)
+        elif weekday == 3:
+            df.to_excel(writer,index=False,startcol=len(reader.columns)-1,startrow=18,header=False)
+        elif weekday == 4:
+            df.to_excel(writer,index=False,startcol=len(reader.columns)-1,startrow=26,header=False)
+        writer.close()
+        
 
 if __name__ == "__main__":
     MyApp().run()

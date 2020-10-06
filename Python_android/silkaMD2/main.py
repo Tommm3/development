@@ -133,11 +133,12 @@ class MyApp(MDApp):
                             )
         self.table.bind(on_row_press=self.row_press)
         self.confirm = MDRectangleFlatButton(text="CONFIRM",
+                                    size_hint=(0.2,0.1),
                                     on_release=self.confirm_action,
                                     text_color=self.theme_cls.primary_color,
                                     pos_hint={"center_x":0.8,"center_y":0.1}
                                     )
-        head = MDLabel(text = "Monday",
+        head = MDLabel(text =  datetime.now().strftime("%A"),
                         halign = 'center',
                         font_style = 'H3',
                         pos_hint={"center_x":0.5,"center_y":0.9},

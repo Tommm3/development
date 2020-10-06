@@ -15,47 +15,65 @@ from kivy.metrics import dp
 
 from datetime import datetime
 
-import pandas as pd
-
-from openpyxl import load_workbook
+from kivy.storage.jsonstore import JsonStore
 
 from helpers import text_field_helper
 
 
+# get the current weekday number
+weekday = datetime.now().weekday()
 
-weekday = 0
-
+# create a list of tuples of exercises info
 def get_init_exercise_tuple(wd):
-    reader = pd.read_excel(r'silka.xlsx')
+    store = JsonStore('silka_final.json')
+    listOfTuples = []
     if wd==0:
-        df = pd.read_excel('silka.xlsx', skiprows=0, usecols=[0,1,len(reader.columns)-1], nrows=8)
+        exRange = store.keys()[:8]
     elif wd==1:
-        df = pd.read_excel('silka.xlsx', skiprows=8, usecols=[0,1,len(reader.columns)-2], nrows=9)
+        exRange = store.keys()[8:17]
     elif wd==3:
-        df = pd.read_excel('silka.xlsx', skiprows=17, usecols=[0,1,len(reader.columns)-2], nrows=8)
+        exRange = store.keys()[17:25]
     elif wd==4:
-        df = pd.read_excel('silka.xlsx', skiprows=25, usecols=[0,1,len(reader.columns)-2], nrows=5)
+        exRange = store.keys()[25:30]
     else:
         return ""
         exit()
-    df['new'] = pd.Series(["NEI"]*len(df), index=df.index)
-    df.index+=1
-    return df.to_records()
+    counter=1
+    for k in exRange:
+        dict_json = store.get(k)
+        list_json=[counter]
+        # max = len(dict_json)
+        counter+=1
+        list_json.append(dict_json['name'])
+        list_json.append(dict_json['sets'])
+        list_json.append(dict_json['repeats'])
+        list_json.append(dict_json['weights'][-1])
+        list_json.append("NEI")
+        listOfTuples.append(tuple(list_json))
+    print(listOfTuples, "utf-8")
+    return listOfTuples
 
 
 class MyApp(MDApp):
+    # call a built-in method to build App
     def build(self):
+        # set initial conditions
         self.current_table = get_init_exercise_tuple(weekday)
         self.set_style()
         self.screen = Screen()
+        # show exerecises table if there are any for today
         if weekday in (0,1,3,4):
             self.update_screen()
         else:
             self.no_exercises_screen()
         return self.screen
 
+
+    # act on clicking on exercise
     def row_press(self, instance_table, instance_row):
-        self.row_no = int(instance_row.index/5)
+        # calculate row number
+        self.row_no = int(instance_row.index/6)
+        # show dialog window with title, tekst input and OK button
         self.weight = Builder.load_string(text_field_helper)
         self.dialog = MDDialog(text=instance_row.text + "\n\n",
                         size_hint=(0.8,1),
@@ -67,43 +85,56 @@ class MyApp(MDApp):
         self.dialog.add_widget(self.weight)
         self.dialog.open()
 
+    # act on confirming user's input
     def close_dialog(self, obj):
+        # update current_table string by user's text input if it is not empty
         if self.weight.text != "":
             list_current_table_row = list(self.current_table[self.row_no])
-            list_current_table_row[4] = self.weight.text
+            list_current_table_row[5] = self.weight.text
             self.current_table[self.row_no] = tuple(list_current_table_row)
             self.update_screen()
+        # close dialog window
         self.dialog.dismiss()
 
+    # act on confirming new weight data
     def confirm_action(self,obj):
-        temp = []
-        for last in self.current_table:
-            temp.append(last[-1])
-        writer = pd.ExcelWriter('silka.xlsx', engine='openpyxl')
-        writer.book = load_workbook('silka.xlsx')
-        writer.sheets = dict((ws.title, ws) for ws in writer.book.worksheets)
-        reader = pd.read_excel(r'silka.xlsx')
-        masa_dict = {('masa'+str(len(reader.columns)-2)):temp}
-        df = pd.DataFrame(masa_dict)
-        if weekday == 0:
-            df.to_excel(writer,index=False,startcol=len(reader.columns))
-            print(reader.nrows)
-        elif weekday == 1:
-            df.to_excel(writer,index=False,startcol=len(reader.columns)-1,startrow=9,header=False)
-        elif weekday == 3:
-            df.to_excel(writer,index=False,startcol=len(reader.columns)-1,startrow=18,header=False)
-        elif weekday == 4:
-            df.to_excel(writer,index=False,startcol=len(reader.columns)-1,startrow=26,header=False)
-        writer.close()
+        # create a dictionary with new data
+        print(self.current_table)
+        # temp = []
+        # for last in self.current_table:
+        #     temp.append(last[-1])
 
+        store = JsonStore('silka_final.json')
+        if weekday==0:
+            exRange = store.keys()[:8]
+        elif weekday==1:
+            exRange = store.keys()[8:17]
+        elif weekday==3:
+            exRange = store.keys()[17:25]
+        elif weekday==4:
+            exRange = store.keys()[25:30]
+        counter = 0
+        for k in exRange:
+            dict_json = store.get(k)
+            tabs = dict_json['weights']
+            tabs.append(self.current_table[counter][-1])
+            counter+=1
+            store.put(k, name=dict_json['name'], sets=dict_json['sets'], repeats=dict_json['repeats'], weights=tabs)
+
+
+
+    # update data on screen
     def update_screen(self):
+        # erase existing objects
         self.screen.canvas.clear()
+        # add a valid datateble, confirm button and title
         self.table = MDDataTable(pos_hint={"center_x":0.5,"center_y":0.5},
                             size_hint=(0.9,0.6),
                             rows_num=9,
                             column_data=[
                                 ("No.",dp(8)),
                                 ("Exercise",dp(80)),
+                                ("Sets",dp(20)),
                                 ("Repeats",dp(20)),
                                 ("Last weight",dp(20)),
                                 ("New weight",dp(20))
@@ -112,11 +143,12 @@ class MyApp(MDApp):
                             )
         self.table.bind(on_row_press=self.row_press)
         self.confirm = MDRectangleFlatButton(text="CONFIRM",
+                                    size_hint=(0.2,0.1),
                                     on_release=self.confirm_action,
                                     text_color=self.theme_cls.primary_color,
                                     pos_hint={"center_x":0.8,"center_y":0.1}
                                     )
-        head = MDLabel(text = "Monday",
+        head = MDLabel(text = datetime.now().strftime("%A"),
                         halign = 'center',
                         font_style = 'H3',
                         pos_hint={"center_x":0.5,"center_y":0.9},
@@ -127,8 +159,11 @@ class MyApp(MDApp):
         self.screen.add_widget(self.confirm)
         self.screen.add_widget(head)
 
+    # show a screen with no exercises
     def no_exercises_screen(self):
+        # erase existing objects
         self.screen.canvas.clear()
+        # add title and info to screen
         info = MDLabel(text = "No exercises for today",
                         halign = 'center',
                         font_style = 'H4',
@@ -146,11 +181,12 @@ class MyApp(MDApp):
         self.screen.add_widget(head)
         self.screen.add_widget(info)
 
+    # set style properties
     def set_style(self):
         self.theme_cls.primary_palette = "Yellow"
         self.theme_cls.primary_hue = "A700"
         self.theme_cls.theme_style = "Dark"
 
-
+# run App
 if __name__ == "__main__":
     MyApp().run()

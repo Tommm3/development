@@ -42,7 +42,6 @@ def get_init_exercise_tuple(wd):
     for k in exRange:
         dict_json = store.get(k)
         list_json=[counter]
-        # max = len(dict_json)
         counter+=1
         list_json.append(dict_json['name'])
         list_json.append(dict_json['sets'])

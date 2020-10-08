@@ -21,12 +21,16 @@ from helpers import text_field_helper
 
 
 # get the current weekday number
-weekday = datetime.now().weekday()
+weekdayNumber = datetime.now().weekday()
+weekdayWord = datetime.now().strftime("%A")
+jsonSaveFile = 'silka_final3.json'
+exerciseDays = (0,1,3,4)
 
 # create a list of tuples of exercises info
-def get_init_exercise_tuple(wd):
-    store = JsonStore('silka_final.json')
+def get_init_exercise_tuple(wd, saveFile):
+    store = JsonStore(saveFile)
     listOfTuples = []
+    counter=1
     if wd==0:
         exRange = store.keys()[:8]
     elif wd==1:
@@ -38,30 +42,31 @@ def get_init_exercise_tuple(wd):
     else:
         return ""
         exit()
-    counter=1
     for k in exRange:
         dict_json = store.get(k)
         list_json=[counter]
         counter+=1
-        list_json.append(dict_json['name'])
-        list_json.append(dict_json['sets'])
-        list_json.append(dict_json['repeats'])
-        list_json.append(dict_json['weights'][-1])
-        list_json.append("NEI")
+        list_json.extend([dict_json['name'], dict_json['sets'], dict_json['repeats'],dict_json['weights'][-1], "NEI"])
         listOfTuples.append(tuple(list_json))
-    print(listOfTuples, "utf-8")
     return listOfTuples
+
+def check_for_nei(listOfTuples):
+    isNEI = False
+    for item in listOfTuples:
+        if item[-1] == 'NEI':
+            isNEI = True
+    return isNEI
 
 
 class MyApp(MDApp):
     # call a built-in method to build App
     def build(self):
         # set initial conditions
-        self.current_table = get_init_exercise_tuple(weekday)
+        self.current_table = get_init_exercise_tuple(weekdayNumber, jsonSaveFile)
         self.set_style()
         self.screen = Screen()
         # show exerecises table if there are any for today
-        if weekday in (0,1,3,4):
+        if weekdayNumber in exerciseDays:
             self.update_screen()
         else:
             self.no_exercises_screen()
@@ -98,28 +103,35 @@ class MyApp(MDApp):
     # act on confirming new weight data
     def confirm_action(self,obj):
         # create a dictionary with new data
-        print(self.current_table)
-        # temp = []
-        # for last in self.current_table:
-        #     temp.append(last[-1])
+        store = JsonStore('silka_final3.json')
+        if not check_for_nei(self.current_table):
+            if weekdayNumber==0:
+                exRange = store.keys()[:8]
+            elif weekdayNumber==1:
+                exRange = store.keys()[8:17]
+            elif weekdayNumber==3:
+                exRange = store.keys()[17:25]
+            elif weekdayNumber==4:
+                exRange = store.keys()[25:30]
+            counter = 0
+            for k in exRange:
+                dict_json = store.get(k)
+                tabs = dict_json['weights']
+                if len(tabs) < (int(datetime.now().strftime("%V"))-38):
+                    tabs.append(self.current_table[counter][-1])
+                else:
+                    tabs[-1]=self.current_table[counter][-1]
+                counter+=1
+                store.put(k, name=dict_json['name'], sets=dict_json['sets'], repeats=dict_json['repeats'], weights=tabs)
+            self.show_confirm_dialog("Weights updated")
+        else:
+            self.show_confirm_dialog("Add new weight to each exercise")
 
-        store = JsonStore('silka_final.json')
-        if weekday==0:
-            exRange = store.keys()[:8]
-        elif weekday==1:
-            exRange = store.keys()[8:17]
-        elif weekday==3:
-            exRange = store.keys()[17:25]
-        elif weekday==4:
-            exRange = store.keys()[25:30]
-        counter = 0
-        for k in exRange:
-            dict_json = store.get(k)
-            tabs = dict_json['weights']
-            tabs.append(self.current_table[counter][-1])
-            counter+=1
-            store.put(k, name=dict_json['name'], sets=dict_json['sets'], repeats=dict_json['repeats'], weights=tabs)
-
+    def show_confirm_dialog(self, textInfo):
+        self.dialog_confirm = MDDialog(text=textInfo,
+                                size_hint=(0.8,1)
+                                )
+        self.dialog_confirm.open()
 
 
     # update data on screen
@@ -147,7 +159,7 @@ class MyApp(MDApp):
                                     text_color=self.theme_cls.primary_color,
                                     pos_hint={"center_x":0.8,"center_y":0.1}
                                     )
-        head = MDLabel(text = datetime.now().strftime("%A"),
+        head = MDLabel(text = weekdayWord,
                         halign = 'center',
                         font_style = 'H3',
                         pos_hint={"center_x":0.5,"center_y":0.9},

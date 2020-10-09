@@ -13,17 +13,18 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.lang import Builder
 from kivy.metrics import dp
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from kivy.storage.jsonstore import JsonStore
 
 from helpers import text_field_helper
 
 
-# get the current weekday number
-weekdayNumber = datetime.now().weekday()
-weekdayWord = datetime.now().strftime("%A")
+# get the current weekday number and name
+weekdayNumber = datetime.now()
+# indicate the saveFile
 jsonSaveFile = 'silka_final3.json'
+# indicate exercise days
 exerciseDays = (0,1,3,4)
 
 # create a list of tuples of exercises info
@@ -51,25 +52,29 @@ def get_init_exercise_tuple(wd, saveFile):
     return listOfTuples
 
 def check_for_nei(listOfTuples):
-    isNEI = False
+    isValue = False
     for item in listOfTuples:
         if item[-1] == 'NEI':
-            isNEI = True
-    return isNEI
+            isValue = True
+    return isValue
+
+def check_for_values(listOfTuples):
+    isValue = False
+    for item in listOfTuples:
+        if item[-1] != 'NEI':
+            isValue = True
+    return isValue
 
 
 class MyApp(MDApp):
     # call a built-in method to build App
     def build(self):
         # set initial conditions
-        self.current_table = get_init_exercise_tuple(weekdayNumber, jsonSaveFile)
+        self.current_table = get_init_exercise_tuple(weekdayNumber.weekday(), jsonSaveFile)
         self.set_style()
         self.screen = Screen()
         # show exerecises table if there are any for today
-        if weekdayNumber in exerciseDays:
-            self.update_screen()
-        else:
-            self.no_exercises_screen()
+        self.update_day_screen()
         return self.screen
 
 
@@ -105,13 +110,13 @@ class MyApp(MDApp):
         # create a dictionary with new data
         store = JsonStore('silka_final3.json')
         if not check_for_nei(self.current_table):
-            if weekdayNumber==0:
+            if weekdayNumber.weekday()==0:
                 exRange = store.keys()[:8]
-            elif weekdayNumber==1:
+            elif weekdayNumber.weekday()==1:
                 exRange = store.keys()[8:17]
-            elif weekdayNumber==3:
+            elif weekdayNumber.weekday()==3:
                 exRange = store.keys()[17:25]
-            elif weekdayNumber==4:
+            elif weekdayNumber.weekday()==4:
                 exRange = store.keys()[25:30]
             counter = 0
             for k in exRange:
@@ -124,6 +129,8 @@ class MyApp(MDApp):
                 counter+=1
                 store.put(k, name=dict_json['name'], sets=dict_json['sets'], repeats=dict_json['repeats'], weights=tabs)
             self.show_confirm_dialog("Weights updated")
+            self.current_table = get_init_exercise_tuple(weekdayNumber.weekday(), jsonSaveFile)
+            self.update_day_screen()
         else:
             self.show_confirm_dialog("Add new weight to each exercise")
 
@@ -154,21 +161,105 @@ class MyApp(MDApp):
                             )
         self.table.bind(on_row_press=self.row_press)
         self.confirm = MDRectangleFlatButton(text="CONFIRM",
-                                    size_hint=(0.2,0.1),
+                                    size_hint=(0.25,0.1),
                                     on_release=self.confirm_action,
                                     text_color=self.theme_cls.primary_color,
                                     pos_hint={"center_x":0.8,"center_y":0.1}
                                     )
-        head = MDLabel(text = weekdayWord,
+        head = MDLabel(text = weekdayNumber.strftime("%A"),
                         halign = 'center',
                         font_style = 'H3',
                         pos_hint={"center_x":0.5,"center_y":0.9},
                         theme_text_color="Custom",
                         text_color=self.theme_cls.primary_color
                         )
+        self.button_left = MDRectangleFlatButton(text="<",
+                                    size_hint=(0.14,0.1),
+                                    on_release=self.day_before,
+                                    text_color=self.theme_cls.primary_color,
+                                    pos_hint={"center_x":0.08,"center_y":0.9}
+                                    )
+        self.button_right = MDRectangleFlatButton(text=">",
+                                    size_hint=(0.14,0.1),
+                                    on_release=self.day_after,
+                                    text_color=self.theme_cls.primary_color,
+                                    pos_hint={"center_x":0.92,"center_y":0.9}
+                                    )
         self.screen.add_widget(self.table)
         self.screen.add_widget(self.confirm)
+        self.screen.add_widget(self.button_left)
+        self.screen.add_widget(self.button_right)
         self.screen.add_widget(head)
+
+    def day_before(self,obj):
+        global weekdayNumber
+        if not check_for_values(self.current_table) or (weekdayNumber.weekday() not in exerciseDays):
+            if weekdayNumber.weekday() > 0:
+                weekdayNumber-=timedelta(days=1)
+            self.current_table = get_init_exercise_tuple(weekdayNumber.weekday(), jsonSaveFile)
+            self.update_day_screen()
+        else:
+            self.show_day_before_dialog("You are in the middle of your workout. Do you want to switch day?")
+
+    def show_day_before_dialog(self, info):
+        self.dialog_day_before = MDDialog(text=info,
+                                size_hint=(0.8,1),
+                                buttons=[MDRectangleFlatButton(text="YES",
+                                                            on_release=self.day_before_confirmed,
+                                                            text_color=self.theme_cls.primary_color,
+                                                            pos_hint={"center_x":1,"center_y":0.5}),
+                                        MDRectangleFlatButton(text="NO",
+                                                            on_release=self.close_dialog_day_before,
+                                                            text_color=self.theme_cls.primary_color,
+                                                            pos_hint={"center_x":1,"center_y":0.5})]
+                                )
+        self.dialog_day_before.open()
+
+    def close_dialog_day_before(self,obj):
+        self.dialog_day_before.dismiss()
+
+    def day_before_confirmed(self,obj):
+        global weekdayNumber
+        if weekdayNumber.weekday() > 0:
+            weekdayNumber-=timedelta(days=1)
+        self.current_table = get_init_exercise_tuple(weekdayNumber.weekday(), jsonSaveFile)
+        self.update_day_screen()
+        self.dialog_day_before.dismiss()
+
+    def day_after(self,obj):
+        global weekdayNumber
+        if not check_for_values(self.current_table) or (weekdayNumber.weekday() not in exerciseDays):
+            if weekdayNumber.weekday() < 6:
+                weekdayNumber+=timedelta(days=1)
+            self.current_table = get_init_exercise_tuple(weekdayNumber.weekday(), jsonSaveFile)
+            self.update_day_screen()
+        else:
+            self.show_day_after_dialog("You are in the middle of your workout. Do you want to switch day?")
+
+    def show_day_after_dialog(self, info):
+        self.dialog_day_after = MDDialog(text=info,
+                                size_hint=(0.8,1),
+                                buttons=[MDRectangleFlatButton(text="YES",
+                                                            on_release=self.day_after_confirmed,
+                                                            text_color=self.theme_cls.primary_color,
+                                                            pos_hint={"center_x":1,"center_y":0.5}),
+                                        MDRectangleFlatButton(text="NO",
+                                                            on_release=self.close_dialog_day_after,
+                                                            text_color=self.theme_cls.primary_color,
+                                                            pos_hint={"center_x":1,"center_y":0.5})]
+                                )
+        self.dialog_day_after.open()
+
+    def close_dialog_day_after(self,obj):
+        self.dialog_day_after.dismiss()
+
+    def day_after_confirmed(self,obj):
+        global weekdayNumber
+        if weekdayNumber.weekday() < 6:
+            weekdayNumber+=timedelta(days=1)
+        self.current_table = get_init_exercise_tuple(weekdayNumber.weekday(), jsonSaveFile)
+        self.update_day_screen()
+        self.dialog_day_after.dismiss()
 
     # show a screen with no exercises
     def no_exercises_screen(self):
@@ -182,14 +273,28 @@ class MyApp(MDApp):
                         theme_text_color="Custom",
                         text_color=self.theme_cls.primary_color
                         )
-        head = MDLabel(text = datetime.now().strftime('%A'),
+        head = MDLabel(text = weekdayNumber.strftime('%A'),
                         halign = 'center',
                         font_style = 'H3',
                         pos_hint={"center_x":0.5,"center_y":0.9},
                         theme_text_color="Custom",
                         text_color=self.theme_cls.primary_color
                         )
+        self.button_left = MDRectangleFlatButton(text="<",
+                                    size_hint=(0.14,0.1),
+                                    on_release=self.day_before,
+                                    text_color=self.theme_cls.primary_color,
+                                    pos_hint={"center_x":0.08,"center_y":0.9}
+                                    )
+        self.button_right = MDRectangleFlatButton(text=">",
+                                    size_hint=(0.14,0.1),
+                                    on_release=self.day_after,
+                                    text_color=self.theme_cls.primary_color,
+                                    pos_hint={"center_x":0.92,"center_y":0.9}
+                                    )
         self.screen.add_widget(head)
+        self.screen.add_widget(self.button_left)
+        self.screen.add_widget(self.button_right)
         self.screen.add_widget(info)
 
     # set style properties
@@ -198,6 +303,11 @@ class MyApp(MDApp):
         self.theme_cls.primary_hue = "A700"
         self.theme_cls.theme_style = "Dark"
 
+    def update_day_screen(self):
+        if weekdayNumber.weekday() in exerciseDays:
+            self.update_screen()
+        else:
+            self.no_exercises_screen()
 # run App
 if __name__ == "__main__":
     MyApp().run()

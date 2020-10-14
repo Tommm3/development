@@ -27,6 +27,7 @@ jsonSaveFile = 'silka_final3.json'
 # indicate exercise days
 exerciseDays = (0,1,3,4)
 
+
 # create a list of tuples of exercises info
 def get_init_exercise_tuple(wd, saveFile):
     store = JsonStore(saveFile)
@@ -51,12 +52,14 @@ def get_init_exercise_tuple(wd, saveFile):
         listOfTuples.append(tuple(list_json))
     return listOfTuples
 
+
 def check_for_nei(listOfTuples):
     isValue = False
     for item in listOfTuples:
         if item[-1] == 'NEI':
             isValue = True
     return isValue
+
 
 def check_for_values(listOfTuples):
     isValue = False
@@ -94,6 +97,7 @@ class MyApp(MDApp):
         self.dialog.add_widget(self.weight)
         self.dialog.open()
 
+
     # act on confirming user's input
     def close_dialog(self, obj):
         # update current_table string by user's text input if it is not empty
@@ -104,6 +108,7 @@ class MyApp(MDApp):
             self.update_screen()
         # close dialog window
         self.dialog.dismiss()
+
 
     # act on confirming new weight data
     def confirm_action(self,obj):
@@ -191,6 +196,7 @@ class MyApp(MDApp):
         self.screen.add_widget(self.button_right)
         self.screen.add_widget(head)
 
+
     def day_before(self,obj):
         global weekdayNumber
         if not check_for_values(self.current_table) or (weekdayNumber.weekday() not in exerciseDays):
@@ -200,6 +206,7 @@ class MyApp(MDApp):
             self.update_day_screen()
         else:
             self.show_day_before_dialog("You are in the middle of your workout. Do you want to switch day?")
+
 
     def show_day_before_dialog(self, info):
         self.dialog_day_before = MDDialog(text=info,
@@ -218,6 +225,7 @@ class MyApp(MDApp):
     def close_dialog_day_before(self,obj):
         self.dialog_day_before.dismiss()
 
+
     def day_before_confirmed(self,obj):
         global weekdayNumber
         if weekdayNumber.weekday() > 0:
@@ -225,6 +233,7 @@ class MyApp(MDApp):
         self.current_table = get_init_exercise_tuple(weekdayNumber.weekday(), jsonSaveFile)
         self.update_day_screen()
         self.dialog_day_before.dismiss()
+
 
     def day_after(self,obj):
         global weekdayNumber
@@ -235,6 +244,7 @@ class MyApp(MDApp):
             self.update_day_screen()
         else:
             self.show_day_after_dialog("You are in the middle of your workout. Do you want to switch day?")
+
 
     def show_day_after_dialog(self, info):
         self.dialog_day_after = MDDialog(text=info,
@@ -250,8 +260,10 @@ class MyApp(MDApp):
                                 )
         self.dialog_day_after.open()
 
+
     def close_dialog_day_after(self,obj):
         self.dialog_day_after.dismiss()
+
 
     def day_after_confirmed(self,obj):
         global weekdayNumber
@@ -260,6 +272,7 @@ class MyApp(MDApp):
         self.current_table = get_init_exercise_tuple(weekdayNumber.weekday(), jsonSaveFile)
         self.update_day_screen()
         self.dialog_day_after.dismiss()
+
 
     # show a screen with no exercises
     def no_exercises_screen(self):
@@ -297,17 +310,21 @@ class MyApp(MDApp):
         self.screen.add_widget(self.button_right)
         self.screen.add_widget(info)
 
+
     # set style properties
     def set_style(self):
         self.theme_cls.primary_palette = "Yellow"
         self.theme_cls.primary_hue = "A700"
         self.theme_cls.theme_style = "Dark"
 
+
     def update_day_screen(self):
         if weekdayNumber.weekday() in exerciseDays:
             self.update_screen()
         else:
             self.no_exercises_screen()
+
+
 # run App
 if __name__ == "__main__":
     MyApp().run()
